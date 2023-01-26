@@ -2,6 +2,8 @@ import logging
 import os
 from typing import Optional
 
+import queue
+
 import ray
 from ray.serve._private.constants import DEBUG_LOG_ENV_VAR, SERVE_LOGGER_NAME
 
@@ -58,7 +60,12 @@ def configure_component_logger(
         )
         file_handler = logging.FileHandler(os.path.join(logs_dir, log_file_name))
         file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
+        # logger.addHandler(file_handler)
+        que = queue.Queue(-1)  # no limit on size
+        queue_handler = logging.handlers.QueueHandler(que)
+        listener = logging.handlers.QueueListener(que, file_handler)
+        logger.addHandler(queue_handler)
+        listener.start()
 
 
 class LoggingContext:
